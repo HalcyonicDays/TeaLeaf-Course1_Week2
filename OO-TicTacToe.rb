@@ -1,3 +1,7 @@
+# An interesting alternative approach would be to create an array variable within 'Player' and assign ownership to the Player object
+# rather than to the Gird object (or Cell objects owned by the Grid object).  In this way, the player can be thought of as having 
+# a hard of cards, each of which is a grid position, eg. [1, 3, 6, 9], and the victory-checker would be run against the "hand" array.
+
 class Player
   attr_reader :name, :marker
 
@@ -28,9 +32,23 @@ end
 class Computer < Player
   
   def take_turn(grid, marking)
-    choice = grid.available_squares.sample
-    grid.occupy_square(choice, marking)
+    grid.occupy_square(grid.available_squares.sample, marking)
   end
+
+  def defensive_ai(grid, marking)  # Not implemented due to bugs.
+    defensive_moves = []
+    opponents_moves = grid.cells.select { |position, value| value = "X" }.keys 
+    opponents_victories = TicTacToeGame::WIN_CONDITIONS.select do |combination|
+    in_a_row = 0
+    opponents_moves.each do |move| 
+      in_a_row += 1 if combination.include?(move.to_s)
+      combination.gsub!(move.to_s,"")
+    end
+    defensive_moves << combination.to_i if in_a_row == 2
+    defensive_moves.select! { |move| grid.available_squares.include?(move)}
+  end
+  defensive_moves.size > 0 ? grid.occupy_square(defensive_moves.sample, marking) : grid.occupy_square(grid.available_squares.sample, marking)
+end
 
 end
 #------------------------------------------------------------------------------------------------------------------------------------------------
@@ -56,9 +74,7 @@ class TicTacToeGame
 
   def play_game
     begin
-      puts "current player is: #{currentplayer}"
       take_turn(player1)
-      puts "current player is: #{currentplayer}"
       take_turn(player2)
     end until game_ends?
     puts board
@@ -76,7 +92,7 @@ class TicTacToeGame
       if board.cells[test_condition[0].to_i] != " "
         if board.cells[test_condition[0].to_i] == board.cells[test_condition[1].to_i] && board.cells[test_condition[0].to_i] == board.cells[test_condition[2].to_i]
           end_game = true
-          @winner = currentplayer.name
+          @winner = @currentplayer.name
         end
       end
     end
